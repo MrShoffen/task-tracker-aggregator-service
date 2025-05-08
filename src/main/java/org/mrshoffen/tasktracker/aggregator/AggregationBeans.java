@@ -1,15 +1,21 @@
-package org.mrshoffen.tasktracker.aggregator.config;
+package org.mrshoffen.tasktracker.aggregator;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.common.circuitbreaker.configuration.CircuitBreakerConfigCustomizer;
 import org.mrshoffen.tasktracker.aggregator.client.DeskClient;
 import org.mrshoffen.tasktracker.aggregator.client.TaskClient;
 import org.mrshoffen.tasktracker.aggregator.client.WorkspaceClient;
+import org.mrshoffen.tasktracker.commons.web.exception.AccessDeniedException;
+import org.mrshoffen.tasktracker.commons.web.exception.EntityNotFoundException;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
+
 @Configuration
-public class ClientBeans {
+public class AggregationBeans {
 
     @Bean
     @LoadBalanced

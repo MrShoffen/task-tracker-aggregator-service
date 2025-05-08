@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +32,7 @@ public class AggregatorService {
     private final TaskClient taskClient;
 
     private final AggregatorMapper aggregatorMapper;
+
 
     public Mono<FullWorkspaceDto> getFullWorkspaceInfo(UUID userId, UUID workspaceId) {
         Mono<WorkspaceResponseDto> workspaceMono = workspaceClient
@@ -52,6 +52,7 @@ public class AggregatorService {
                 .map(this::aggregateTupleToWorkspaceDto);
 
     }
+
 
     private FullWorkspaceDto aggregateTupleToWorkspaceDto(Tuple3<WorkspaceResponseDto, List<DeskResponseDto>, List<TaskResponseDto>> objects) {
         WorkspaceResponseDto workspace = objects.getT1();

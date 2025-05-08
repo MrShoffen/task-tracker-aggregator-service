@@ -15,6 +15,7 @@ kafka-user:
 app:
   gateway:
     api-prefix: /api/v1
+
 ###
 
 
@@ -37,4 +38,66 @@ eureka:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 
+resilience4j:
+  timelimiter:
+    time-limiter-aspect-order: 5
+    configs:
+      default:
+        timeout-duration: 800ms
+    instances:
+      taskClient:
+        base-config: default
+      deskClient:
+        base-config: default
+      workspaceClient:
+        base-config: default
 
+  retry:
+    retry-aspect-order: 3
+    configs:
+      default:
+        enable-exponential-backoff: true
+        wait-duration: 600ms
+        exponential-max-wait-duration: 2s
+        exponential-backoff-multiplier: 1.5
+        max-attempts: 3
+        randomized-wait-factor:
+        ignore-exceptions:
+          - org.mrshoffen.tasktracker.commons.web.exception.EntityNotFoundException
+          - org.mrshoffen.tasktracker.commons.web.exception.AccessDeniedException
+    instances:
+      taskClient:
+        base-config: default
+      deskClient:
+        base-config: default
+      workspaceClient:
+        base-config: default
+
+  circuitbreaker:
+    circuit-breaker-aspect-order: 1
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 30
+        permitted-number-of-calls-in-half-open-state: 5
+        wait-duration-in-open-state: 10s
+        automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:
+          - org.mrshoffen.tasktracker.commons.web.exception.EntityNotFoundException
+          - org.mrshoffen.tasktracker.commons.web.exception.AccessDeniedException
+    instances:
+      taskClient:
+        base-config: default
+      deskClient:
+        base-config: default
+      workspaceClient:
+        base-config: default
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'

@@ -1,4 +1,4 @@
-package org.mrshoffen.tasktracker.aggregator.controller.privatee;
+package org.mrshoffen.tasktracker.aggregator.controller.protectedd;
 
 
 import lombok.RequiredArgsConstructor;
