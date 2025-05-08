@@ -7,15 +7,6 @@ discovery-service-user:
     username: user
     password: pass
 
-#
-kafka-user:
-  bootstrap-servers: 192.168.0.125:29092,192.168.0.125:39092,192.168.0.125:49092
-
-#
-app:
-  gateway:
-    api-prefix: /api/v1
-
 ###
 
 

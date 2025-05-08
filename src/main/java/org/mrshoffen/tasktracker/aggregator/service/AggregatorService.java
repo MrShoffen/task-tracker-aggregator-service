@@ -6,20 +6,16 @@ import org.mrshoffen.tasktracker.aggregator.client.TaskClient;
 import org.mrshoffen.tasktracker.aggregator.client.WorkspaceClient;
 import org.mrshoffen.tasktracker.aggregator.dto.FullDeskResponse;
 import org.mrshoffen.tasktracker.aggregator.dto.FullTaskResponse;
-import org.mrshoffen.tasktracker.aggregator.dto.FullWorkspaceDto;
+import org.mrshoffen.tasktracker.aggregator.dto.FullWorkspaceResponse;
 import org.mrshoffen.tasktracker.aggregator.mapper.AggregatorMapper;
 import org.mrshoffen.tasktracker.commons.web.dto.DeskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.TaskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.WorkspaceResponseDto;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple3;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -33,8 +29,7 @@ public class AggregatorService {
 
     private final AggregatorMapper aggregatorMapper;
 
-
-    public Mono<FullWorkspaceDto> getFullWorkspaceInfo(UUID userId, UUID workspaceId) {
+    public Mono<FullWorkspaceResponse> getFullWorkspaceInfo(UUID userId, UUID workspaceId) {
         Mono<WorkspaceResponseDto> workspaceMono = workspaceClient
                 .getWorkspaceInfo(workspaceId);
 
@@ -43,48 +38,52 @@ public class AggregatorService {
                 .collectList();
 
         Mono<List<TaskResponseDto>> taskMono = taskClient
-                .getTasks(workspaceId)
+                .getTasksInWorkspace(workspaceId)
                 .collectList();
 
         return workspaceClient
                 .ensureUserOwnsWorkspace(userId, workspaceId)
                 .then(Mono.zip(workspaceMono, deskMono, taskMono))
-                .map(this::aggregateTupleToWorkspaceDto);
+                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3()));
+    }
 
+    public Mono<FullDeskResponse> getFullDeskInfo(UUID userId, UUID workspaceId, UUID deskId) {
+        Mono<DeskResponseDto> deskMono = deskClient
+                .getDeskInfo(workspaceId, deskId);
+
+        Mono<List<TaskResponseDto>> taskMono = taskClient
+                .getTasksInDesk(workspaceId, deskId)
+                .collectList();
+
+        return deskClient
+                .ensureUserOwnsDesk(userId, workspaceId, deskId)
+                .then(Mono.zip(deskMono, taskMono))
+                .map(tuple ->
+                        assembleFullDeskResponse(tuple.getT1(), tuple.getT2())
+                );
     }
 
 
-    private FullWorkspaceDto aggregateTupleToWorkspaceDto(Tuple3<WorkspaceResponseDto, List<DeskResponseDto>, List<TaskResponseDto>> objects) {
-        WorkspaceResponseDto workspace = objects.getT1();
-        List<DeskResponseDto> desks = objects.getT2();
-        List<TaskResponseDto> tasks = objects.getT3();
-
-        List<FullDeskResponse> fullDesksResponse = aggregateTasksToDesks(desks, tasks);
-
-        FullWorkspaceDto fullResponse = aggregatorMapper.toFullResponse(workspace);
-        fullResponse.setDesks(fullDesksResponse);
-
-        return fullResponse;
-    }
-
-    private List<FullDeskResponse> aggregateTasksToDesks(List<DeskResponseDto> desks, List<TaskResponseDto> tasks) {
-        Map<UUID, List<FullTaskResponse>> groupedTasks = tasks.stream()
-                .map(aggregatorMapper::toFullResponse)
-                .collect(Collectors.groupingBy(FullTaskResponse::getDeskId));
-
-        List<FullDeskResponse> list = desks.stream()
-                .map(aggregatorMapper::toFullResponse)
+    private FullWorkspaceResponse assembleFullWorkspaceDto(WorkspaceResponseDto workspace, List<DeskResponseDto> desks, List<TaskResponseDto> tasks) {
+        List<FullDeskResponse> fullDesksResponses = desks.stream()
+                .map(desk -> assembleFullDeskResponse(desk, tasks))
                 .toList();
 
-        for (FullDeskResponse fullDeskResponse : list) {
-            if (groupedTasks.get(fullDeskResponse.getId()) != null) {
-                fullDeskResponse.setTasks(groupedTasks.get(fullDeskResponse.getId()));
-            } else {
-                fullDeskResponse.setTasks(Collections.emptyList());
-            }
-        }
+        FullWorkspaceResponse fullWorkspaceResponse = aggregatorMapper.toFullResponse(workspace);
+        fullWorkspaceResponse.setDesks(fullDesksResponses);
 
-        return list;
+        return fullWorkspaceResponse;
     }
 
+    private FullDeskResponse assembleFullDeskResponse(DeskResponseDto desk, List<TaskResponseDto> tasks) {
+        FullDeskResponse fullDeskResponse = aggregatorMapper.toFullResponse(desk);
+
+        List<FullTaskResponse> fullTasks = tasks.stream()
+                .map(aggregatorMapper::toFullResponse)
+                .filter(fullTask -> fullTask.getDeskId().equals(desk.getId()))
+                .toList();
+
+        fullDeskResponse.setTasks(fullTasks);
+        return fullDeskResponse;
+    }
 }
