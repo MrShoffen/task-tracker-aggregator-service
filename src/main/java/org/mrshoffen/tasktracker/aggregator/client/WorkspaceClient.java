@@ -24,20 +24,4 @@ public class WorkspaceClient {
                 .bodyToMono(WorkspaceResponseDto.class);
     }
 
-    public Mono<ResponseEntity<Void>> ensureUserOwnsWorkspace(UUID userId, UUID workspaceId) {
-        return webClient
-                .get()
-                .uri("/internal/workspaces/{userId}/{workspaceId}", userId, workspaceId)
-                .retrieve()
-                .toBodilessEntity()
-                .onErrorMap(WebClientResponseException.NotFound.class, e ->
-                        new EntityNotFoundException("Пространство с id '%s' не существует"
-                                .formatted(workspaceId))
-                )
-                .onErrorMap(WebClientResponseException.Forbidden.class, e ->
-                        new AccessDeniedException("Пользователь не имеет доступа к данному пространству '%s'"
-                                .formatted(workspaceId))
-                );
-    }
-
 }

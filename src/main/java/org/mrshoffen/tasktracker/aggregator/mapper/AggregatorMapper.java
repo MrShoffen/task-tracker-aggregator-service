@@ -4,9 +4,11 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mrshoffen.tasktracker.aggregator.dto.FullDeskResponse;
 import org.mrshoffen.tasktracker.aggregator.dto.FullTaskResponse;
+import org.mrshoffen.tasktracker.aggregator.dto.FullUserPermissionResponse;
 import org.mrshoffen.tasktracker.aggregator.dto.FullWorkspaceResponse;
 import org.mrshoffen.tasktracker.commons.web.dto.DeskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.TaskResponseDto;
+import org.mrshoffen.tasktracker.commons.web.dto.UserPermissionResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.WorkspaceResponseDto;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -17,4 +19,6 @@ public interface AggregatorMapper {
     FullDeskResponse toFullResponse(DeskResponseDto deskResponseDto);
 
     FullWorkspaceResponse toFullResponse(WorkspaceResponseDto workspaceResponseDto);
+
+    FullUserPermissionResponse toFullResponse(UserPermissionResponseDto userPermissionResponseDto);
 }

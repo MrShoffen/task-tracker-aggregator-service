@@ -3,18 +3,12 @@ discovery-service-user:
   server:
     hostname: localhost
     port: 8010
-  credentials:
-    username: user
-    password: pass
-
 ###
 
 
 spring:
   application:
     name: aggregator-rs
-  profiles:
-    active: discovery-service-user
   config:
     import: optional:configserver:http://${CONFIG_SERVER_USER}:${CONFIG_SERVER_PASSWORD}@${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8012}
 
@@ -42,6 +36,8 @@ resilience4j:
         base-config: default
       workspaceClient:
         base-config: default
+      userClient:
+        base-config: default
 
   retry:
     retry-aspect-order: 3
@@ -62,6 +58,8 @@ resilience4j:
       deskClient:
         base-config: default
       workspaceClient:
+        base-config: default
+      userClient:
         base-config: default
 
   circuitbreaker:
@@ -84,6 +82,8 @@ resilience4j:
       deskClient:
         base-config: default
       workspaceClient:
+        base-config: default
+      userClient:
         base-config: default
 
 

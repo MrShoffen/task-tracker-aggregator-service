@@ -18,7 +18,6 @@ import static org.springframework.http.HttpStatus.*;
 @RestControllerAdvice
 public class AggregatorControllerAdvice {
 
-
     @ExceptionHandler(AccessDeniedException.class)
     public Mono<ResponseEntity<ProblemDetail>> handleTaskStructureException(AccessDeniedException e) {
         ProblemDetail problem = generateProblemDetail(FORBIDDEN, e);

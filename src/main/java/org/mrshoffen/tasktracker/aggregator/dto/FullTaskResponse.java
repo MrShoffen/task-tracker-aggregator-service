@@ -15,5 +15,6 @@ public class FullTaskResponse {
     private UUID parentTaskId;
     private UUID workspaceId;
     private UUID deskId;
+    private Long orderIndex;
     private Links api;
 }

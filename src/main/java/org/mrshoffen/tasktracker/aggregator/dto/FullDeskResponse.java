@@ -4,7 +4,6 @@ import lombok.Data;
 import org.mrshoffen.tasktracker.commons.utils.link.Links;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +14,7 @@ public class FullDeskResponse {
     private String name;
     private Instant createdAt;
     private UUID workspaceId;
+    private Long orderIndex;
     private Links api;
     private List<FullTaskResponse> tasks;
 }
