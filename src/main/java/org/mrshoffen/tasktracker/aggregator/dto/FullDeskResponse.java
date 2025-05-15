@@ -13,6 +13,7 @@ public class FullDeskResponse {
     private UUID id;
     private String name;
     private Instant createdAt;
+    private String color;
     private UUID workspaceId;
     private Long orderIndex;
     private Links api;

@@ -13,7 +13,6 @@ import org.mrshoffen.tasktracker.aggregator.dto.FullWorkspaceResponse;
 import org.mrshoffen.tasktracker.aggregator.mapper.AggregatorMapper;
 import org.mrshoffen.tasktracker.commons.web.dto.DeskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.TaskResponseDto;
-import org.mrshoffen.tasktracker.commons.web.dto.UserPermissionResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.WorkspaceResponseDto;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -52,9 +51,9 @@ public class AggregatorService {
                 .getAllPermissionsInWorkspace(workspaceId)
                 .map(aggregatorMapper::toFullResponse)
                 .flatMap(perm ->
-                        userClient.getUserEmail(perm.getUserId())
-                                .map(email -> {
-                                    perm.setUserEmail(email);
+                        userClient.getUserInformation(perm.getUserId())
+                                .map(userInfo -> {
+                                    perm.setInfo(userInfo);
                                     return perm;
                                 })
                 )

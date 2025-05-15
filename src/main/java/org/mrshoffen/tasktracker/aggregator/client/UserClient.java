@@ -6,6 +6,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mrshoffen.tasktracker.commons.web.dto.UserResponseDto;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -20,19 +21,19 @@ public class UserClient {
     @TimeLimiter(name = "userClient")
     @Retry(name = "userClient")
     @CircuitBreaker(name = "userClient", fallbackMethod = "getUserFallback")
-    public Mono<String> getUserEmail(UUID userId) {
+    public Mono<UserResponseDto> getUserInformation(UUID userId) {
         return webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/internal/users/email")
+                        .path("/internal/users/information")
                         .queryParam("id", userId)
                         .build())
                 .retrieve()
-                .bodyToMono(String.class);
+                .bodyToMono(UserResponseDto.class);
     }
 
-    Mono<String> getUserFallback(UUID userId, Throwable ex) {
+    Mono<UserResponseDto> getUserFallback(UUID userId, Throwable ex) {
         log.warn("Error while fetching user mail {} ", userId, ex);
-        return Mono.just("User - " + userId);
+        return Mono.empty();
     }
 }

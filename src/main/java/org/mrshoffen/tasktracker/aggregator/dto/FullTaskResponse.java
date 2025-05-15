@@ -12,7 +12,8 @@ public class FullTaskResponse {
     private String name;
     private Boolean completed;
     private Instant createdAt;
-    private UUID parentTaskId;
+    private String color;
+    private String coverUrl;
     private UUID workspaceId;
     private UUID deskId;
     private Long orderIndex;
