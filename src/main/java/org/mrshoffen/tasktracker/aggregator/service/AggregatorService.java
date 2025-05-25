@@ -1,11 +1,7 @@
 package org.mrshoffen.tasktracker.aggregator.service;
 
 import lombok.RequiredArgsConstructor;
-import org.mrshoffen.tasktracker.aggregator.client.DeskClient;
-import org.mrshoffen.tasktracker.aggregator.client.PermissionsClient;
-import org.mrshoffen.tasktracker.aggregator.client.TaskClient;
-import org.mrshoffen.tasktracker.aggregator.client.UserClient;
-import org.mrshoffen.tasktracker.aggregator.client.WorkspaceClient;
+import org.mrshoffen.tasktracker.aggregator.client.*;
 import org.mrshoffen.tasktracker.aggregator.dto.FullDeskResponse;
 import org.mrshoffen.tasktracker.aggregator.dto.FullTaskResponse;
 import org.mrshoffen.tasktracker.aggregator.dto.FullUserPermissionResponse;
@@ -14,6 +10,7 @@ import org.mrshoffen.tasktracker.aggregator.mapper.AggregatorMapper;
 import org.mrshoffen.tasktracker.commons.web.dto.DeskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.TaskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.WorkspaceResponseDto;
+import org.mrshoffen.tasktracker.commons.web.exception.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -102,5 +99,40 @@ public class AggregatorService {
 
         fullDeskResponse.setTasks(fullTasks);
         return fullDeskResponse;
+    }
+
+    public Mono<FullWorkspaceResponse> getFullPublicWorkspaceInfo(UUID workspaceId) {
+        Mono<WorkspaceResponseDto> workspaceMono = workspaceClient
+                .getWorkspaceInfo(workspaceId);
+
+        Mono<List<DeskResponseDto>> deskMono = deskClient
+                .getDesks(workspaceId)
+                .collectList();
+
+        Mono<List<TaskResponseDto>> taskMono = taskClient
+                .getTasksInWorkspace(workspaceId)
+                .collectList();
+
+        Mono<List<FullUserPermissionResponse>> permissions = permissionsClient
+                .getAllPermissionsInWorkspace(workspaceId)
+                .map(aggregatorMapper::toFullResponse)
+                .flatMap(perm ->
+                        userClient.getUserInformation(perm.getUserId())
+                                .map(userInfo -> {
+                                    perm.setInfo(userInfo);
+                                    return perm;
+                                })
+                )
+                .collectList();
+
+        return workspaceMono
+                .flatMap(ws -> {
+                    if (!ws.getIsPublic()) {
+                        return Mono.error(new AccessDeniedException("Данное пространство не является публичным"));
+                    } else {
+                        return Mono.zip(workspaceMono, deskMono, taskMono);
+                    }
+                })
+                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), null));
     }
 }

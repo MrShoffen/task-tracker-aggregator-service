@@ -2,7 +2,6 @@ package org.mrshoffen.tasktracker.aggregator.dto;
 
 import lombok.Data;
 import org.mrshoffen.tasktracker.commons.utils.link.Links;
-import org.mrshoffen.tasktracker.commons.web.dto.UserPermissionResponseDto;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,7 +12,10 @@ public class FullWorkspaceResponse {
     private UUID id;
     private String name;
     private Instant createdAt;
+    private String coverUrl;
     private Links api;
+    private Boolean isPublic;
+    private UUID userId;
     private List<FullDeskResponse> desks;
 
     private List<FullUserPermissionResponse> usersAndPermissions;
