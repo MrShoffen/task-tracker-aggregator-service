@@ -8,6 +8,8 @@ import org.mrshoffen.tasktracker.aggregator.dto.FullUserPermissionResponse;
 import org.mrshoffen.tasktracker.aggregator.dto.FullWorkspaceResponse;
 import org.mrshoffen.tasktracker.aggregator.mapper.AggregatorMapper;
 import org.mrshoffen.tasktracker.commons.web.dto.DeskResponseDto;
+import org.mrshoffen.tasktracker.commons.web.dto.StickerResponseDto;
+import org.mrshoffen.tasktracker.commons.web.dto.TaskCommentsCountDto;
 import org.mrshoffen.tasktracker.commons.web.dto.TaskResponseDto;
 import org.mrshoffen.tasktracker.commons.web.dto.WorkspaceResponseDto;
 import org.mrshoffen.tasktracker.commons.web.exception.AccessDeniedException;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -28,6 +32,10 @@ public class AggregatorService {
     private final TaskClient taskClient;
 
     private final PermissionsClient permissionsClient;
+
+    private final StickerClient stickerClient;
+
+    private final CommentsClient commentsClient;
 
     private final AggregatorMapper aggregatorMapper;
     private final UserClient userClient;
@@ -44,6 +52,14 @@ public class AggregatorService {
                 .getTasksInWorkspace(workspaceId)
                 .collectList();
 
+        Mono<List<StickerResponseDto>> stickerMono = stickerClient
+                .getStickersInWorkspace(workspaceId)
+                .collectList();
+
+        Mono<List<TaskCommentsCountDto>> commentCountMono = commentsClient
+                .getCommentsCount(workspaceId)
+                .collectList();
+
         Mono<List<FullUserPermissionResponse>> permissions = permissionsClient
                 .getAllPermissionsInWorkspace(workspaceId)
                 .map(aggregatorMapper::toFullResponse)
@@ -57,28 +73,25 @@ public class AggregatorService {
                 .collectList();
 
 
-        return Mono.zip(workspaceMono, deskMono, taskMono, permissions)
-                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), tuple.getT4()));
+        return Mono.zip(workspaceMono, deskMono, taskMono, permissions, stickerMono, commentCountMono)
+                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(),
+                        tuple.getT3(), tuple.getT4(),
+                        tuple.getT5(), tuple.getT6()));
     }
 
-    public Mono<FullDeskResponse> getFullDeskInfo(UUID userId, UUID workspaceId, UUID deskId) {
-        Mono<DeskResponseDto> deskMono = deskClient
-                .getDeskInfo(workspaceId, deskId);
 
-        Mono<List<TaskResponseDto>> taskMono = taskClient
-                .getTasksInDesk(workspaceId, deskId)
-                .collectList();
+    private FullWorkspaceResponse assembleFullWorkspaceDto(WorkspaceResponseDto workspace,
+                                                           List<DeskResponseDto> desks,
+                                                           List<TaskResponseDto> tasks,
+                                                           List<FullUserPermissionResponse> permissions,
+                                                           List<StickerResponseDto> stickers,
+                                                           List<TaskCommentsCountDto> commentsCount) {
 
-        return Mono.zip(deskMono, taskMono)
-                .map(tuple ->
-                        assembleFullDeskResponse(tuple.getT1(), tuple.getT2())
-                );
-    }
+        Map<UUID, Long> commentsCountMap = commentsCount.stream()
+                .collect(Collectors.toMap(TaskCommentsCountDto::getTaskId, TaskCommentsCountDto::getCount));
 
-    private FullWorkspaceResponse assembleFullWorkspaceDto(WorkspaceResponseDto workspace, List<DeskResponseDto> desks,
-                                                           List<TaskResponseDto> tasks, List<FullUserPermissionResponse> permissions) {
         List<FullDeskResponse> fullDesksResponses = desks.stream()
-                .map(desk -> assembleFullDeskResponse(desk, tasks))
+                .map(desk -> assembleFullDeskResponse(desk, tasks, stickers, commentsCountMap))
                 .toList();
 
         FullWorkspaceResponse fullWorkspaceResponse = aggregatorMapper.toFullResponse(workspace);
@@ -89,16 +102,26 @@ public class AggregatorService {
     }
 
 
-    private FullDeskResponse assembleFullDeskResponse(DeskResponseDto desk, List<TaskResponseDto> tasks) {
-        FullDeskResponse fullDeskResponse = aggregatorMapper.toFullResponse(desk);
-
+    private FullDeskResponse assembleFullDeskResponse(DeskResponseDto desk,
+                                                      List<TaskResponseDto> tasks,
+                                                      List<StickerResponseDto> stickers,
+                                                      Map<UUID, Long> commentsCountMap) {
         List<FullTaskResponse> fullTasks = tasks.stream()
-                .map(aggregatorMapper::toFullResponse)
-                .filter(fullTask -> fullTask.getDeskId().equals(desk.getId()))
+                .filter(task -> task.getDeskId().equals(desk.getId()))
+                .map(task -> assembleFullTaskResponse(task, stickers, commentsCountMap))
                 .toList();
 
-        fullDeskResponse.setTasks(fullTasks);
-        return fullDeskResponse;
+        return aggregatorMapper.toFullResponse(desk, fullTasks);
+    }
+
+    private FullTaskResponse assembleFullTaskResponse(TaskResponseDto task,
+                                                      List<StickerResponseDto> stickers,
+                                                      Map<UUID, Long> commentsCountMap
+                                                      ) {
+        List<StickerResponseDto> stickersOnTask = stickers.stream()
+                .filter(sticker -> sticker.getTaskId().equals(task.getId()))
+                .toList();
+        return aggregatorMapper.toFullResponse(task, stickersOnTask, commentsCountMap.get(task.getId()));
     }
 
     public Mono<FullWorkspaceResponse> getFullPublicWorkspaceInfo(UUID workspaceId) {
@@ -130,9 +153,9 @@ public class AggregatorService {
                     if (!ws.getIsPublic()) {
                         return Mono.error(new AccessDeniedException("Данное пространство не является публичным"));
                     } else {
-                        return Mono.zip(workspaceMono, deskMono, taskMono);
+                        return Mono.zip(workspaceMono, deskMono, taskMono, permissions);
                     }
                 })
-                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), null));
+                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), null, null, null));
     }
 }

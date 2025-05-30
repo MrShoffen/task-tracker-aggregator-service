@@ -1,7 +1,6 @@
 package org.mrshoffen.tasktracker.aggregator.dto;
 
 import lombok.Data;
-import org.mrshoffen.tasktracker.commons.utils.link.Links;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,8 +13,8 @@ public class FullDeskResponse {
     private String name;
     private Instant createdAt;
     private String color;
+    private UUID userId;
     private UUID workspaceId;
     private Long orderIndex;
-    private Links api;
     private List<FullTaskResponse> tasks;
 }

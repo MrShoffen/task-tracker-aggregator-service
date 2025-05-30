@@ -1,7 +1,9 @@
 package org.mrshoffen.tasktracker.aggregator;
 
+import org.mrshoffen.tasktracker.aggregator.client.CommentsClient;
 import org.mrshoffen.tasktracker.aggregator.client.PermissionsClient;
 import org.mrshoffen.tasktracker.aggregator.client.DeskClient;
+import org.mrshoffen.tasktracker.aggregator.client.StickerClient;
 import org.mrshoffen.tasktracker.aggregator.client.TaskClient;
 import org.mrshoffen.tasktracker.aggregator.client.UserClient;
 import org.mrshoffen.tasktracker.aggregator.client.WorkspaceClient;
@@ -42,6 +44,16 @@ public class AggregationBeans {
     @Bean
     public UserClient userClient(WebClient.Builder webClientBuilder) {
         return new UserClient(webClientBuilder.baseUrl("http://user-profile-ws").build());
+    }
+
+    @Bean
+    public StickerClient stickerClient(WebClient.Builder webClientBuilder) {
+        return new StickerClient(webClientBuilder.baseUrl("http://sticker-manager-rs").build());
+    }
+
+    @Bean
+    public CommentsClient commentsClient(WebClient.Builder webClientBuilder) {
+        return new CommentsClient(webClientBuilder.baseUrl("http://task-comments-rs").build());
     }
 
 }

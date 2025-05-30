@@ -38,6 +38,10 @@ resilience4j:
         base-config: default
       userClient:
         base-config: default
+      stickerClient:
+        base-config: default
+      commentClient:
+        base-config: default
 
   retry:
     retry-aspect-order: 3
@@ -60,6 +64,10 @@ resilience4j:
       workspaceClient:
         base-config: default
       userClient:
+        base-config: default
+      stickerClient:
+        base-config: default
+      commentClient:
         base-config: default
 
   circuitbreaker:
@@ -84,6 +92,10 @@ resilience4j:
       workspaceClient:
         base-config: default
       userClient:
+        base-config: default
+      stickerClient:
+        base-config: default
+      commentClient:
         base-config: default
 
 

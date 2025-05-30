@@ -30,14 +30,6 @@ public class DeskClient {
                 .bodyToFlux(DeskResponseDto.class);
     }
 
-    public Mono<DeskResponseDto> getDeskInfo(UUID workspaceId, UUID deskId) {
-        return webClient
-                .get()
-                .uri("/aggregate-api/workspaces/{workspaceId}/desks/{deskId}", workspaceId, deskId)
-                .retrieve()
-                .bodyToMono(DeskResponseDto.class);
-    }
-
     public Flux<TaskResponseDto> getDesksFallback(UUID workspaceId, Throwable ex) {
         log.warn("Error while fetching tasks for aggregating {} ", workspaceId, ex);
         return Flux.empty();
