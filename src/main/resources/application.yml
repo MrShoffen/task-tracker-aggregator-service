@@ -13,7 +13,7 @@ spring:
     import: optional:configserver:http://${CONFIG_SERVER_USER}:${CONFIG_SERVER_PASSWORD}@${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8012}
 
 
-server.port: ${PORT:0}
+server.port: ${PORT:8080}
 
 eureka:
   client:
@@ -100,7 +100,15 @@ resilience4j:
 
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    metrics:
+      access: read_only
+    prometheus:
+      access: read_only
   endpoints:
     web:
       exposure:
-        include: '*'
+        include: prometheus, metrics
