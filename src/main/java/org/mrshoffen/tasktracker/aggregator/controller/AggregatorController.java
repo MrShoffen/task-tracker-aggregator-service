@@ -41,17 +41,7 @@ public class AggregatorController {
     @GetMapping("/public-workspaces/{workspaceId}/full")
     public Mono<FullWorkspaceResponse> getFullPublicWorkspaceInformation(@PathVariable("workspaceId") UUID workspaceId) {
         return aggregatorService
-                        .getFullPublicWorkspaceInfo( workspaceId);
+                .getFullPublicWorkspaceInfo(workspaceId);
 
     }
-
-//    @GetMapping("/{workspaceId}/comments-count")
-//    public Flux<TaskCommentsCountDto> getCommentsCount(@RequestHeader(AUTHORIZED_USER_HEADER_NAME) UUID userId,
-//                                                       @PathVariable("workspaceId") UUID workspaceId) {
-//        return permissionsService
-//                .verifyUserPermission(userId, workspaceId, CREATE_READ_COMMENTS)
-//                .then(aggregatorService
-//                        .getCommentsCount(workspaceId)
-//                );
-//    }
 }

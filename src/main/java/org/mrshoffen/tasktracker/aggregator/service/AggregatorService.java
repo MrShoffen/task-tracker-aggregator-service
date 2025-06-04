@@ -16,10 +16,13 @@ import org.mrshoffen.tasktracker.commons.web.exception.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.*;
 
 @RequiredArgsConstructor
 @Service
@@ -117,7 +120,7 @@ public class AggregatorService {
     private FullTaskResponse assembleFullTaskResponse(TaskResponseDto task,
                                                       List<StickerResponseDto> stickers,
                                                       Map<UUID, Long> commentsCountMap
-                                                      ) {
+    ) {
         List<StickerResponseDto> stickersOnTask = stickers.stream()
                 .filter(sticker -> sticker.getTaskId().equals(task.getId()))
                 .toList();
@@ -136,16 +139,9 @@ public class AggregatorService {
                 .getTasksInWorkspace(workspaceId)
                 .collectList();
 
-        Mono<List<FullUserPermissionResponse>> permissions = permissionsClient
-                .getAllPermissionsInWorkspace(workspaceId)
-                .map(aggregatorMapper::toFullResponse)
-                .flatMap(perm ->
-                        userClient.getUserInformation(perm.getUserId())
-                                .map(userInfo -> {
-                                    perm.setInfo(userInfo);
-                                    return perm;
-                                })
-                )
+
+        Mono<List<StickerResponseDto>> stickerMono = stickerClient
+                .getStickersInWorkspace(workspaceId)
                 .collectList();
 
         return workspaceMono
@@ -153,9 +149,9 @@ public class AggregatorService {
                     if (!ws.getIsPublic()) {
                         return Mono.error(new AccessDeniedException("Данное пространство не является публичным"));
                     } else {
-                        return Mono.zip(workspaceMono, deskMono, taskMono, permissions);
+                        return Mono.zip(workspaceMono, deskMono, taskMono, stickerMono);
                     }
                 })
-                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), null, null, null));
+                .map(tuple -> assembleFullWorkspaceDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), emptyList(), tuple.getT4(), emptyList()));
     }
 }
